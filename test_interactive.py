@@ -1,6 +1,6 @@
 import os
 import json
-from api import SpectatorRecommender
+from src.auto_spectate.api import SpectatorRecommender
 
 def build_player(name, hp=100, weapon_tier=3, speed=250.0, dist=1000.0, last_combat=99.0, deals_dmg=0.0):
     # Apply reasonable defaults for the remaining rolling window features
@@ -41,11 +41,11 @@ def run_scenario(recommender, players, scenario_title, description):
     print("=" * 60 + "\n")
 
 def main():
-    if not os.path.exists("model.pkl"):
+    if not os.path.exists("models/model.pkl"):
         print("Error: model.pkl not found! Please run 'uv run python main.py' first to train the model.")
         return
 
-    recommender = SpectatorRecommender(model_path="model.pkl")
+    recommender = SpectatorRecommender(model_path="models/model.pkl")
     
     while True:
         print("\n--- CS2 Auto-Spectator Recommendation Tester ---")

@@ -3,7 +3,7 @@ import joblib
 import pandas as pd
 
 class SpectatorRecommender:
-    def __init__(self, model_path="model.pkl"):
+    def __init__(self, model_path="models/model.pkl"):
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model file not found at {model_path}. Please train the model first.")
         self.model = joblib.load(model_path)

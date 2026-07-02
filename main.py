@@ -1,7 +1,7 @@
 import os
 import json
 import pandas as pd
-from api import SpectatorRecommender
+from src.auto_spectate.api import SpectatorRecommender
 
 def main():
     print("====================================================")
@@ -9,30 +9,30 @@ def main():
     print("====================================================\n")
     
     # Check if dataset and model files exist
-    dataset_exists = os.path.exists("training_dataset.csv")
-    model_exists = os.path.exists("model.pkl")
+    dataset_exists = os.path.exists("data/training_dataset.csv")
+    model_exists = os.path.exists("models/model.pkl")
     
     if not dataset_exists:
         print("Step 1: Running Demo Parsing Pipeline to generate dataset...")
-        import parse_demos
+        from src.auto_spectate import parse_demos
         parse_demos.main()
     else:
-        print("Step 1: Dataset 'training_dataset.csv' already exists.")
+        print("Step 1: Dataset 'data/training_dataset.csv' already exists.")
         
     if not model_exists:
         print("\nStep 2: Training the RandomForestRegressor model...")
-        import train
+        from src.auto_spectate import train
         train.main()
     else:
-        print("\nStep 2: Trained model 'model.pkl' already exists.")
+        print("\nStep 2: Trained model 'models/model.pkl' already exists.")
         
     print("\nStep 3: Running offline evaluation on unseen test demo...")
-    import evaluate
+    from src.auto_spectate import evaluate
     evaluate.main()
     
     print("\nStep 4: Demonstrating live prediction API...")
     # Instantiate API
-    recommender = SpectatorRecommender(model_path="model.pkl")
+    recommender = SpectatorRecommender(model_path="models/model.pkl")
     
     # Create sample live input representing 5 alive players in a match state
     sample_live_players = [

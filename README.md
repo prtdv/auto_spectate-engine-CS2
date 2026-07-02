@@ -24,10 +24,10 @@ graph TD
 ## Project Structure
 
 - [main.py](file:///c:/Users/prtdv/Desktop/auto_spectate/main.py): Main entry point orchestrating parsing, training, offline evaluation, and a sample API prediction.
-- [parse_demos.py](file:///c:/Users/prtdv/Desktop/auto_spectate/parse_demos.py): Extracts player features and computes future combat scores from raw CS2 `.dem` files.
-- [train.py](file:///c:/Users/prtdv/Desktop/auto_spectate/train.py): Trains a `RandomForestRegressor` and evaluates basic regression metrics on a test split (split by demo file to prevent data leakage).
-- [evaluate.py](file:///c:/Users/prtdv/Desktop/auto_spectate/evaluate.py): Simulates an offline spectator replay using a test demo to measure observer-specific performance metrics (Kill Coverage, Combat Coverage, Lead Time).
-- [api.py](file:///c:/Users/prtdv/Desktop/auto_spectate/api.py): Provides the core `SpectatorRecommender` class for real-time predictions.
+- [parse_demos.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/parse_demos.py): Extracts player features and computes future combat scores from raw CS2 `.dem` files.
+- [train.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/train.py): Trains a `RandomForestRegressor` and evaluates basic regression metrics on a test split (split by demo file to prevent data leakage).
+- [evaluate.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/evaluate.py): Simulates an offline spectator replay using a test demo to measure observer-specific performance metrics (Kill Coverage, Combat Coverage, Lead Time).
+- [api.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/api.py): Provides the core `SpectatorRecommender` class for real-time predictions.
 - [test_interactive.py](file:///c:/Users/prtdv/Desktop/auto_spectate/test_interactive.py): Interactive CLI tool containing pre-configured scenarios (e.g., AWP sniper holding angle vs entry fragger rushing, low health escape vs active trade) to test the recommendation engine interactively.
 - [pyproject.toml](file:///c:/Users/prtdv/Desktop/auto_spectate/pyproject.toml): Project dependencies and build setup managed via `uv`.
 
@@ -83,7 +83,7 @@ $$\text{Future Score} = (1.0 \times \text{Damage Dealt}) + (0.5 \times \text{Dam
    - `scikit-learn` (for ML modeling)
 
 3. **Provide Demo Files:**
-   Ensure you have CS2 demo files (`.dem`) under the paths defined in [parse_demos.py](file:///c:/Users/prtdv/Desktop/auto_spectate/parse_demos.py#L16-L19):
+   Ensure you have CS2 demo files (`.dem`) under the paths defined in [parse_demos.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/parse_demos.py#L16-L19):
    - `demos/iem-atlanta-2026-natus-vincere-vs-vitality-bo3-Oy5NkCJPWmHl6H0cKtC9_L/`
    - `demos/iem-cologne-major-2026-natus-vincere-vs-spirit-bo3-kgjfQml_20SbX4SdXD-5FD/`
 
@@ -112,9 +112,8 @@ This CLI lets you choose from scenarios such as:
 
 ## Evaluation Metrics
 
-The system uses three key domain metrics inside [evaluate.py](file:///c:/Users/prtdv/Desktop/auto_spectate/evaluate.py) to assess suitability for a live broadcast:
+The system uses three key domain metrics inside [evaluate.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/evaluate.py) to assess suitability for a live broadcast:
 
 1. **Kill Coverage**: The percentage of all kills in the match that the system was successfully spectating (meaning the recommended player got the kill) within the lookahead window of 5 seconds.
 2. **Combat Coverage**: The percentage of the match time the system successfully recommended a player who participated in combat (dealt/received damage or got a kill) in the next 5 seconds.
 3. **Average Lead Time**: The average time (in seconds) *before* the first combat action occurred that the system switched to spectating that player. Higher lead time allows viewers to settle in and anticipate the duel.
-# auto_spectate-for-CS2

@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import joblib
@@ -24,7 +25,7 @@ TEST_DEMO = "natus-vincere-vs-spirit-m2-anubis.dem"
 
 def main():
     print("Loading dataset...")
-    df = pd.read_csv("training_dataset.csv")
+    df = pd.read_csv("data/training_dataset.csv")
     print(f"Dataset shape: {df.shape}")
     
     # Train/Test Split by Demo to prevent leakage
@@ -73,7 +74,8 @@ def main():
     print(feat_imp.to_string(index=False))
     
     # Save model
-    model_path = "model.pkl"
+    model_path = "models/model.pkl"
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(model, model_path)
     print(f"\nModel successfully saved to {model_path}")
 

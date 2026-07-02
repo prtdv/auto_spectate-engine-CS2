@@ -37,18 +37,18 @@ def clean_steamid(val):
 
 def main():
     print(f"Loading model and evaluating on: {TEST_DEMO_PATH}...")
-    if not os.path.exists("model.pkl"):
+    if not os.path.exists("models/model.pkl"):
         print("Error: model.pkl not found. Please train the model first.")
         return
         
-    model = joblib.load("model.pkl")
+    model = joblib.load("models/model.pkl")
     
     # Load and process the test demo (just like in parse_demos.py)
-    df_all = pd.read_csv("training_dataset.csv")
+    df_all = pd.read_csv("data/training_dataset.csv")
     test_samples_df = df_all[df_all["demo_name"] == os.path.basename(TEST_DEMO_PATH)]
     
     if test_samples_df.empty:
-        print("Error: No test samples found in training_dataset.csv for this demo.")
+        print("Error: No test samples found in data/training_dataset.csv for this demo.")
         return
         
     print(f"Loaded {len(test_samples_df)} test samples from CSV.")

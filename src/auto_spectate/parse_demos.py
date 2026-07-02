@@ -308,7 +308,8 @@ def main():
         return
         
     df = pd.DataFrame(all_samples)
-    output_csv = "training_dataset.csv"
+    output_csv = "data/training_dataset.csv"
+    os.makedirs(os.path.dirname(output_csv), exist_ok=True)
     df.to_csv(output_csv, index=False)
     print(f"Saved dataset to {output_csv}. Total rows: {len(df)}")
 

@@ -1,4 +1,4 @@
-# CS2 Auto-Spectator Recommendation System (MVP)
+# CS2 Auto-Spectator Recommendation System
 
 A machine learning pipeline and API designed to predict player engagement in Counter-Strike 2 (CS2) match demos. The system automatically recommends the most "exciting" or action-bound player to spectate in real-time, matching or exceeding the capabilities of human observers by anticipating combat events before they happen.
 

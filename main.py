@@ -48,8 +48,12 @@ def main():
             "damage_dealt_last_5s": 45.0,
             "damage_taken_last_5s": 15.0,
             "shots_fired_last_5s": 4,
+            "utility_thrown_last_5s": 0,
             "kills_last_30s": 1,
-            "time_since_last_combat": 1.2
+            "time_since_last_combat": 1.2,
+            "view_angle_to_enemy": 0.85,
+            "is_bomb_planted": 0,
+            "is_scoped": 0
         },
         {
             "player": "ZywOo",
@@ -63,8 +67,12 @@ def main():
             "damage_dealt_last_5s": 0.0,
             "damage_taken_last_5s": 0.0,
             "shots_fired_last_5s": 0,
+            "utility_thrown_last_5s": 0,
             "kills_last_30s": 2,
-            "time_since_last_combat": 8.5
+            "time_since_last_combat": 8.5,
+            "view_angle_to_enemy": 0.95,
+            "is_bomb_planted": 0,
+            "is_scoped": 1
         },
         {
             "player": "w0nderful",
@@ -78,8 +86,12 @@ def main():
             "damage_dealt_last_5s": 0.0,
             "damage_taken_last_5s": 80.0,
             "shots_fired_last_5s": 1,
+            "utility_thrown_last_5s": 0,
             "kills_last_30s": 0,
-            "time_since_last_combat": 0.2
+            "time_since_last_combat": 0.2,
+            "view_angle_to_enemy": -0.4,
+            "is_bomb_planted": 0,
+            "is_scoped": 0
         },
         {
             "player": "flameZ",
@@ -93,8 +105,12 @@ def main():
             "damage_dealt_last_5s": 0.0,
             "damage_taken_last_5s": 0.0,
             "shots_fired_last_5s": 0,
+            "utility_thrown_last_5s": 1,
             "kills_last_30s": 0,
-            "time_since_last_combat": 25.0
+            "time_since_last_combat": 25.0,
+            "view_angle_to_enemy": 0.1,
+            "is_bomb_planted": 0,
+            "is_scoped": 0
         },
         {
             "player": "b1t",
@@ -108,8 +124,12 @@ def main():
             "damage_dealt_last_5s": 88.0,
             "damage_taken_last_5s": 0.0,
             "shots_fired_last_5s": 6,
+            "utility_thrown_last_5s": 0,
             "kills_last_30s": 2,
-            "time_since_last_combat": 0.5
+            "time_since_last_combat": 0.5,
+            "view_angle_to_enemy": 0.98,
+            "is_bomb_planted": 0,
+            "is_scoped": 0
         }
     ]
     

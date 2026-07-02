@@ -23,8 +23,12 @@ FEATURE_COLS = [
     "damage_dealt_last_5s",
     "damage_taken_last_5s",
     "shots_fired_last_5s",
+    "utility_thrown_last_5s",
     "kills_last_30s",
-    "time_since_last_combat"
+    "time_since_last_combat",
+    "view_angle_to_enemy",
+    "is_bomb_planted",
+    "is_scoped"
 ]
 
 def clean_steamid(val):

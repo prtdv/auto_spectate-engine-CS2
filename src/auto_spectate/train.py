@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import joblib
-from sklearn.ensemble import RandomForestRegressor
+from lightgbm import LGBMRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # Define columns
@@ -17,8 +17,12 @@ FEATURE_COLS = [
     "damage_dealt_last_5s",
     "damage_taken_last_5s",
     "shots_fired_last_5s",
+    "utility_thrown_last_5s",
     "kills_last_30s",
-    "time_since_last_combat"
+    "time_since_last_combat",
+    "view_angle_to_enemy",
+    "is_bomb_planted",
+    "is_scoped"
 ]
 TARGET_COL = "future_score"
 TEST_DEMO = "natus-vincere-vs-spirit-m2-anubis.dem"
@@ -40,8 +44,8 @@ def main():
     X_test = test_df[FEATURE_COLS]
     y_test = test_df[TARGET_COL]
     
-    print("Training RandomForestRegressor model...")
-    model = RandomForestRegressor(
+    print("Training LGBMRegressor model...")
+    model = LGBMRegressor(
         n_estimators=200,
         max_depth=12,
         random_state=42,

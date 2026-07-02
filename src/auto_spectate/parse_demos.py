@@ -14,8 +14,9 @@ LOOKBACK_30S_TICKS = 1920  # 30 seconds
 
 # Demos paths
 DEMO_DIRS = [
-    r"demos\iem-atlanta-2026-natus-vincere-vs-vitality-bo3-Oy5NkCJPWmHl6H0cKtC9_L",
-    r"demos\iem-cologne-major-2026-natus-vincere-vs-spirit-bo3-kgjfQml_20SbX4SdXD-5FD"
+    os.path.join("demos", d)
+    for d in os.listdir("demos")
+    if os.path.isdir(os.path.join("demos", d))
 ]
 
 def get_weapon_tier(weapon_name):
@@ -111,8 +112,50 @@ def process_demo(demo_path):
     player_hurt_attacker = defaultdict(list)
     player_hurt_user = defaultdict(list)
     player_weapon_fire = defaultdict(list)
+    player_utility_fire = defaultdict(list)
     player_kills = defaultdict(list)
     player_assists = defaultdict(list)
+    
+    # Bomb events parsing
+    bomb_planted_ticks = []
+    bomb_resolved_ticks = []
+    try:
+        bomb_planted_df = parser.parse_event("bomb_planted")
+        if isinstance(bomb_planted_df, pd.DataFrame) and not bomb_planted_df.empty:
+            bomb_planted_ticks = sorted(bomb_planted_df["tick"].unique())
+    except Exception as e:
+        print(f"Warning: Failed to parse bomb_planted event: {e}")
+        
+    try:
+        bomb_defused_df = parser.parse_event("bomb_defused")
+        if isinstance(bomb_defused_df, pd.DataFrame) and not bomb_defused_df.empty:
+            bomb_resolved_ticks.extend(bomb_defused_df["tick"].unique())
+    except Exception as e:
+        print(f"Warning: Failed to parse bomb_defused event: {e}")
+        
+    try:
+        bomb_exploded_df = parser.parse_event("bomb_exploded")
+        if isinstance(bomb_exploded_df, pd.DataFrame) and not bomb_exploded_df.empty:
+            bomb_resolved_ticks.extend(bomb_exploded_df["tick"].unique())
+    except Exception as e:
+        print(f"Warning: Failed to parse bomb_exploded event: {e}")
+        
+    bomb_resolved_ticks.sort()
+
+    def get_is_bomb_planted(current_t):
+        if not bomb_planted_ticks:
+            return 0
+        idx_plant = bisect.bisect_right(bomb_planted_ticks, current_t) - 1
+        if idx_plant < 0:
+            return 0
+        plant_t = bomb_planted_ticks[idx_plant]
+        
+        idx_res = bisect.bisect_right(bomb_resolved_ticks, current_t) - 1
+        if idx_res >= 0:
+            res_t = bomb_resolved_ticks[idx_res]
+            if res_t >= plant_t:
+                return 0
+        return 1
     
     if not player_hurt_df.empty:
         for _, row in player_hurt_df.iterrows():
@@ -140,13 +183,18 @@ def process_demo(demo_path):
         for _, row in weapon_fire_df.iterrows():
             user = row.get("user_steamid", "")
             t = int(row["tick"])
+            w = str(row.get("weapon", "")).lower()
             if user:
-                player_weapon_fire[user].append(t)
-                
+                if any(x in w for x in ["grenade", "flashbang", "molotov", "incgrenade"]):
+                    player_utility_fire[user].append(t)
+                else:
+                    player_weapon_fire[user].append(t)
+                    
     # Sort lists
     for k in player_hurt_attacker: player_hurt_attacker[k].sort(key=lambda x: x[0])
     for k in player_hurt_user: player_hurt_user[k].sort(key=lambda x: x[0])
     for k in player_weapon_fire: player_weapon_fire[k].sort()
+    for k in player_utility_fire: player_utility_fire[k].sort()
     for k in player_kills: player_kills[k].sort()
     for k in player_assists: player_assists[k].sort()
     
@@ -187,7 +235,7 @@ def process_demo(demo_path):
     tick_props = [
         "health", "armor_value", "X", "Y", "Z", "yaw", "pitch",
         "velocity_X", "velocity_Y", "velocity_Z", "active_weapon_name",
-        "team_num", "steamid", "name"
+        "team_num", "steamid", "name", "is_scoped"
     ]
     
     ticks_df = parser.parse_ticks(tick_props)
@@ -224,30 +272,71 @@ def process_demo(demo_path):
             hp = int(row["health"])
             armor = int(row["armor_value"])
             w_tier = get_weapon_tier(row["active_weapon_name"])
+            is_scoped = int(row["is_scoped"]) if "is_scoped" in row and not pd.isna(row["is_scoped"]) else 0
+            is_bomb_planted = get_is_bomb_planted(tick)
             
-            vx = float(row["velocity_X"])
-            vy = float(row["velocity_Y"])
-            speed = math.sqrt(vx**2 + vy**2)
+            vx_vel = float(row["velocity_X"])
+            vy_vel = float(row["velocity_Y"])
+            speed = math.sqrt(vx_vel**2 + vy_vel**2)
             
             # Find distances to alive enemies
             enemy_dists = []
+            nearest_enemy_idx = -1
+            min_enemy_dist = 99999.0
+            
             for j, p_other in enumerate(players_data):
                 if p_other[2] != team:  # different team
-                    enemy_dists.append(dists[idx, j])
-                    
+                    d = dists[idx, j]
+                    enemy_dists.append(d)
+                    if d < min_enemy_dist:
+                        min_enemy_dist = d
+                        nearest_enemy_idx = j
+                        
             if not enemy_dists:
                 nearest_enemy_distance = 99999.0
                 enemy_count_500 = 0
                 enemy_count_1000 = 0
+                view_angle_to_enemy = 0.0
             else:
                 nearest_enemy_distance = min(enemy_dists)
                 enemy_count_500 = sum(d <= 500 for d in enemy_dists)
                 enemy_count_1000 = sum(d <= 1000 for d in enemy_dists)
                 
+                # Calculate Line of Sight (LOS) / Angling
+                if nearest_enemy_idx != -1:
+                    enemy_X = float(players_data[nearest_enemy_idx][3])
+                    enemy_Y = float(players_data[nearest_enemy_idx][4])
+                    enemy_Z = float(players_data[nearest_enemy_idx][5])
+                    
+                    dx = enemy_X - float(row["X"])
+                    dy = enemy_Y - float(row["Y"])
+                    dz = enemy_Z - float(row["Z"])
+                    
+                    d_len = math.sqrt(dx**2 + dy**2 + dz**2)
+                    if d_len > 0:
+                        dx /= d_len
+                        dy /= d_len
+                        dz /= d_len
+                    else:
+                        dx, dy, dz = 0.0, 0.0, 0.0
+                        
+                    yaw_rad = math.radians(float(row["yaw"]))
+                    pitch_rad = math.radians(float(row["pitch"]))
+                    
+                    vx = math.cos(pitch_rad) * math.cos(yaw_rad)
+                    vy = math.cos(pitch_rad) * math.sin(yaw_rad)
+                    vz = -math.sin(pitch_rad)
+                    
+                    view_angle_to_enemy = vx * dx + vy * dy + vz * dz
+                    view_angle_to_enemy = max(-1.0, min(1.0, view_angle_to_enemy))
+                else:
+                    view_angle_to_enemy = 0.0
+                
             # Rolling window features
             damage_dealt_last_5s = sum_hurt_in_range(player_hurt_attacker[sid], tick - LOOKBACK_5S_TICKS, tick)
             damage_taken_last_5s = sum_hurt_in_range(player_hurt_user[sid], tick - LOOKBACK_5S_TICKS, tick)
             shots_fired_last_5s = count_in_range(player_weapon_fire[sid], tick - LOOKBACK_5S_TICKS, tick)
+            utility_thrown_last_5s = count_in_range(player_utility_fire[sid], tick - LOOKBACK_5S_TICKS, tick)
             kills_last_30s = count_in_range(player_kills[sid], tick - LOOKBACK_30S_TICKS, tick)
             time_since_last_combat = get_time_since_last_combat(sid, tick)
             
@@ -279,8 +368,12 @@ def process_demo(demo_path):
                 "damage_dealt_last_5s": damage_dealt_last_5s,
                 "damage_taken_last_5s": damage_taken_last_5s,
                 "shots_fired_last_5s": shots_fired_last_5s,
+                "utility_thrown_last_5s": utility_thrown_last_5s,
                 "kills_last_30s": kills_last_30s,
                 "time_since_last_combat": time_since_last_combat,
+                "view_angle_to_enemy": view_angle_to_enemy,
+                "is_bomb_planted": is_bomb_planted,
+                "is_scoped": is_scoped,
                 "future_score": future_score
             })
             

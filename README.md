@@ -6,13 +6,13 @@ A machine learning pipeline and API designed to predict player engagement in Cou
 
 ## Overview
 
-The **CS2 Auto-Spectator** parses CS2 demo files (`.dem`), extracts spatial-temporal player features, trains a Random Forest regressor to predict a future combat/excitement score, and provides a real-time recommendation API.
+The **CS2 Auto-Spectator** parses CS2 demo files (`.dem`), extracts spatial-temporal player features, trains a LightGBM regressor to predict a future combat/excitement score, and provides a real-time recommendation API.
 
 ```mermaid
 graph TD
     A[CS2 Demo Files .dem] -->|parse_demos.py| B[Feature Extraction & Labeling]
     B -->|CSV Export| C[training_dataset.csv]
-    C -->|train.py| D[RandomForestRegressor Model]
+    C -->|train.py| D[LightGBM Model]
     D -->|joblib| E[model.pkl]
     E -->|evaluate.py| F[Offline Replay Simulation]
     E -->|api.py| G[SpectatorRecommender API]
@@ -23,20 +23,20 @@ graph TD
 
 ## Project Structure
 
-- [main.py](file:///c:/Users/prtdv/Desktop/auto_spectate/main.py): Main entry point orchestrating parsing, training, offline evaluation, and a sample API prediction.
-- [parse_demos.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/parse_demos.py): Extracts player features and computes future combat scores from raw CS2 `.dem` files.
-- [train.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/train.py): Trains a `RandomForestRegressor` and evaluates basic regression metrics on a test split (split by demo file to prevent data leakage).
-- [evaluate.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/evaluate.py): Simulates an offline spectator replay using a test demo to measure observer-specific performance metrics (Kill Coverage, Combat Coverage, Lead Time).
-- [api.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/api.py): Provides the core `SpectatorRecommender` class for real-time predictions.
-- [test_interactive.py](file:///c:/Users/prtdv/Desktop/auto_spectate/test_interactive.py): Interactive CLI tool containing pre-configured scenarios (e.g., AWP sniper holding angle vs entry fragger rushing, low health escape vs active trade) to test the recommendation engine interactively.
-- [pyproject.toml](file:///c:/Users/prtdv/Desktop/auto_spectate/pyproject.toml): Project dependencies and build setup managed via `uv`.
+- [main.py](file:///d:/Projects/major%20projects/auto_spectate/main.py): Main entry point orchestrating parsing, training, offline evaluation, and a sample API prediction.
+- [src/auto_spectate/parse_demos.py](file:///d:/Projects/major%20projects/auto_spectate/src/auto_spectate/parse_demos.py): Extracts player features and computes future combat scores from raw CS2 `.dem` files.
+- [src/auto_spectate/train.py](file:///d:/Projects/major%20projects/auto_spectate/src/auto_spectate/train.py): Trains a `LGBMRegressor` and evaluates basic regression metrics on a test split (split by demo file to prevent data leakage).
+- [src/auto_spectate/evaluate.py](file:///d:/Projects/major%20projects/auto_spectate/src/auto_spectate/evaluate.py): Simulates an offline spectator replay using a test demo to measure observer-specific performance metrics (Kill Coverage, Combat Coverage, Lead Time).
+- [src/auto_spectate/api.py](file:///d:/Projects/major%20projects/auto_spectate/src/auto_spectate/api.py): Provides the core `SpectatorRecommender` class for real-time predictions.
+- [test_interactive.py](file:///d:/Projects/major%20projects/auto_spectate/test_interactive.py): Interactive CLI tool containing pre-configured scenarios (e.g., AWP sniper holding angle vs entry fragger rushing, low health escape vs active trade) to test the recommendation engine interactively.
+- [pyproject.toml](file:///d:/Projects/major%20projects/auto_spectate/pyproject.toml): Project dependencies and build setup managed via `uv`.
 
 ---
 
 ## Features & Target Scoring
 
-### Player Features Extracted (12 Dimensions)
-The pipeline extracts temporal and spatial features for every alive player at a 1-second interval (every 64 ticks at 64Hz):
+### Player Features Extracted (16 Dimensions)
+The pipeline extracts temporal, spatial, and tactical features for every alive player at a 1-second interval (every 64 ticks at 64Hz):
 1. `hp`: Current health of the player (0 - 100).
 2. `armor`: Current armor of the player (0 - 100).
 3. `weapon_tier`: Categorized tier of the active weapon:
@@ -51,8 +51,12 @@ The pipeline extracts temporal and spatial features for every alive player at a 
 8. `damage_dealt_last_5s`: Rolling sum of damage dealt to enemies in the last 5 seconds.
 9. `damage_taken_last_5s`: Rolling sum of damage taken in the last 5 seconds.
 10. `shots_fired_last_5s`: Rolling count of shots fired in the last 5 seconds.
-11. `kills_last_30s`: Number of kills secured by the player in the last 30 seconds.
-12. `time_since_last_combat`: Seconds elapsed since the player last dealt or received damage.
+11. `utility_thrown_last_5s`: Rolling count of utility items (flashes, smokes, HE grenades, molotovs) thrown in the last 5 seconds.
+12. `kills_last_30s`: Number of kills secured by the player in the last 30 seconds.
+13. `time_since_last_combat`: Seconds elapsed since the player last dealt or received damage.
+14. `view_angle_to_enemy`: 3D view-direction dot product towards the nearest opponent (Line of Sight/Angling).
+15. `is_bomb_planted`: Flag indicating if the bomb is currently active/planted.
+16. `is_scoped`: Flag indicating if the player is currently scoped in.
 
 ### Target Value (Future Score)
 The model learns to predict the **Future Combat Score** over a lookahead window of **5 seconds** (320 ticks):
@@ -77,15 +81,14 @@ $$\text{Future Score} = (1.0 \times \text{Damage Dealt}) + (0.5 \times \text{Dam
    ```bash
    uv sync
    ```
-   This will automatically set up the virtual environment (`.venv`) and install all required packages from [pyproject.toml](file:///c:/Users/prtdv/Desktop/auto_spectate/pyproject.toml):
+   This will automatically set up the virtual environment (`.venv`) and install all required packages from [pyproject.toml](file:///d:/Projects/major%20projects/auto_spectate/pyproject.toml):
    - `demoparser2` (for parsing `.dem` files)
+   - `lightgbm` (for gradient boosting regressor)
    - `pandas` & `numpy` (for data processing)
-   - `scikit-learn` (for ML modeling)
+   - `scikit-learn` (for ML modeling utilities)
 
 3. **Provide Demo Files:**
-   Ensure you have CS2 demo files (`.dem`) under the paths defined in [parse_demos.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/parse_demos.py#L16-L19):
-   - `demos/iem-atlanta-2026-natus-vincere-vs-vitality-bo3-Oy5NkCJPWmHl6H0cKtC9_L/`
-   - `demos/iem-cologne-major-2026-natus-vincere-vs-spirit-bo3-kgjfQml_20SbX4SdXD-5FD/`
+   Ensure you place CS2 demo files (`.dem`) under folders inside `demos/`.
 
 ---
 
@@ -102,18 +105,15 @@ You can test the recommendation system with pre-built or custom scenarios intera
 ```bash
 uv run python test_interactive.py
 ```
-This CLI lets you choose from scenarios such as:
-1. **AWP Sniper holding angle vs. Entry Fragger rushing site**: Evaluates whether the system prefers a sniper or an entry fragger approaching combat.
-2. **Low-health player running away vs. Player entering combat**: Checks if the model avoids low-HP players who are retreating and selects active engagement.
-3. **Quiet buy period vs. Active firefight**: Differentiates between static positions and dynamic gunfights.
-4. **Custom**: Enter custom values for speed, health, weapon tier, and enemy distance to verify predictions.
 
 ---
 
-## Evaluation Metrics
+## Evaluation Metrics & Performance
 
-The system uses three key domain metrics inside [evaluate.py](file:///c:/Users/prtdv/Desktop/auto_spectate/src/auto_spectate/evaluate.py) to assess suitability for a live broadcast:
+The system evaluates observer-specific domain metrics inside [evaluate.py](file:///d:/Projects/major%20projects/auto_spectate/src/auto_spectate/evaluate.py) on an unseen test match demo (**Anubis**):
 
-1. **Kill Coverage**: The percentage of all kills in the match that the system was successfully spectating (meaning the recommended player got the kill) within the lookahead window of 5 seconds.
-2. **Combat Coverage**: The percentage of the match time the system successfully recommended a player who participated in combat (dealt/received damage or got a kill) in the next 5 seconds.
-3. **Average Lead Time**: The average time (in seconds) *before* the first combat action occurred that the system switched to spectating that player. Higher lead time allows viewers to settle in and anticipate the duel.
+| Metric | Definition | LightGBM Model (5 Demos, 16 Features) |
+| :--- | :--- | :---: |
+| **Kill Coverage** | % of total match kills the system successfully spectates within the 5s lookahead window. | **43.94%** |
+| **Combat Coverage** | % of match ticks where the recommended player engages in combat within the next 5s. | **20.24%** |
+| **Avg Lead Time** | Average lead time (in seconds) before combat occurs that the system switches to that player. | **2.038s** |
